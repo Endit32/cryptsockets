@@ -80,19 +80,17 @@ class clientObj:
         cipher = PKCS1_OAEP.new(self.clientPriv)
         return cipher.decrypt(message)
 
-    def send(self, message):
-        packet = dumps({
-            'message': self.encrypt(self.serverPub, message)
-
-        }) + ':end'
-        self.client.sendall(packet.encode())
+    def send(self, packet):
+        self.client.sendall(self.encrypt(self.clientPub, packet).encode())
 
     def recv(self):
         data = None
         while True:
-            data += self.client.recv(4096)
+            data += self.decrypt(self.client.recv(4096))
             if re.search(':end$', data):
                 return re.sub(':end$', "", data)
+
+
 
 
 
