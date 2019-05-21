@@ -4,6 +4,7 @@ from Crypto.Signature import pss
 from Crypto.Cipher import PKCS1_OAEP
 import os
 import re
+import socket
 from threading import Thread
 from json import dumps, loads
 
@@ -64,6 +65,35 @@ class server:
         clientPub = client.recv(8192)
 
 
+class clientObj:
+    def __init__(self, client, clientPub, clientPriv, serverPub):
+        self.client = client
+        self.clientPub = clientPub
+        self.clientPriv = clientPriv
+        self.serverPub = serverPub
+
+    def encrypt(self, public, message):
+        cipher = PKCS1_OAEP.new(public)
+        return cipher.encrypt(message)
+
+    def decrypt(self, message):
+        cipher = PKCS1_OAEP.new(self.clientPriv)
+        return cipher.decrypt(message)
+
+    def send(self, message):
+        packet = dumps({
+            'message': self.encrypt(self.serverPub, message)
+
+        }) + ':end'
+        self.client.sendall(packet.encode())
+
+    def recv(self):
+        data = None
+        while True:
+            data += self.client.recv(4096)
+            if re.search(':end$', data):
+                return re.sub(':end$', "", data)
+
 
 
 
@@ -99,5 +129,3 @@ class client:
     def decrypt(self, message):
         cipher = PKCS1_OAEP.new(self.privateKey)
         return cipher.decrypt(message)
-
-
