@@ -49,13 +49,6 @@ class server:
         cipher = PKCS1_OAEP.new(self.privateKey)
         return cipher.decrypt(message)
 
-    def recvall(self):
-        data = None
-        while True:
-            data += sock.recv(4096)
-            if re.search(':end$', data):
-                return re.sub(':end$', "", data)
-
     def accept(self):
         client, addr = self.s.accept()
         packet=dumps({
@@ -63,6 +56,7 @@ class server:
         }).encode()
         client.sendall(packet)
         clientPub = client.recv(8192)
+        return clientObj(client, clientPub, self.privateKey, self.publicKey)
 
 
 class clientObj:
