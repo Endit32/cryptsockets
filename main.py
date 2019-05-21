@@ -8,10 +8,11 @@ import socket
 from threading import Thread
 from json import dumps, loads
 
+
 def keyOut(key, password=None):
     if password:
         return key.exportKey(format='DER', pkcs=8, protection='PBKDF2WithHMAC-SHA1AndDES-EDE3-CBC',
-                                              passphrase=password)
+                             passphrase=password)
     else:
         return key.exportKey(format='DER')
 
@@ -21,7 +22,6 @@ def keyIn(key, password=None):
         return RSA.import_key(key, passphrase=password)
     else:
         return RSA.import_key(key)
-
 
 
 class server:
@@ -39,7 +39,7 @@ class server:
                     self.publicKey = keyIn(publicKey)
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.bind(('0.0.0.0', port))
-        self.s.listen()
+        self.s.listen(100)
 
     def encrypt(self, public, message):
         cipher = PKCS1_OAEP.new(public)
@@ -51,7 +51,7 @@ class server:
 
     def accept(self):
         client, addr = self.s.accept()
-        packet=dumps({
+        packet = dumps({
             'public': self.publicKey
         }).encode()
         client.sendall(packet)
@@ -81,15 +81,8 @@ class clientObj:
         data = None
         while True:
             data += self.decrypt(self.client.recv(4096))
-            if re.search(':end$', data):
-                return re.sub(':end$', "", data)
-
-
-
-
-
-
-
+            if data.endswith(':end'):
+                return data[:-4]
 
 
 class client:
@@ -112,7 +105,7 @@ class client:
             'public': self.publicKey
         }).encode()
         self.s.sendall(packet)
-        serverPub = self.s.recv(8192)
+        self.serverPub = self.s.recv(8192)
 
     def encrypt(self, public, message):
         cipher = PKCS1_OAEP.new(public)
@@ -121,3 +114,14 @@ class client:
     def decrypt(self, message):
         cipher = PKCS1_OAEP.new(self.privateKey)
         return cipher.decrypt(message)
+
+    def send(self, message):
+        data = self.encrypt(self.serverPub, message + ':end')
+        self.s.sendall(data.encode())
+
+    def recv(self):
+        data = None
+        while True:
+            data += self.decrypt(self.s.recv(4096))
+            if data.endswith(':end'):
+                return data[:-4]
