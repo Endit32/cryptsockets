@@ -7,7 +7,7 @@ A simple sockets modules that encrypts all traffic using RSA keys from the pycry
 
 Server:
 
-```
+```python
 from cryptsockets import server
 
 Server = server()
@@ -21,7 +21,7 @@ print('message: %s' % client.recv())
 
 Client:
 
-```
+```python
 from cryptsockets import client
 
 Client = client('127.0.0.1')
@@ -33,8 +33,8 @@ Client.send('Tom')
 
 ## Classes and Functions
 
-`**function** generate(bits=2048)`
-  This function generate a private, public keypair.
+`**function** generate(bits=2048)`\n
+  This function generate a private, public keypair.\n
   The argument bits is the size of the RSA modulus, 2048 is the default.
   returns private key, public key in that order
 `**class** server(ip='0.0.0.0', port=1699, public=None, private=None, password=None)`
