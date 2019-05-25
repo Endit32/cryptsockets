@@ -1,6 +1,6 @@
 # CryptSockets
 
-A simple sockets modules that encrypts all traffic using RSA keys from the pycryptodome module.
+A simple sockets module that encrypts all traffic using RSA keys from the pycryptodome module.
 
 
 ## Examples:
