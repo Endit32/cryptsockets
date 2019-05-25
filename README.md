@@ -33,11 +33,14 @@ Client.send('Tom')
 
 ## Classes and Functions
 
-`**function** generate(bits=2048)`\n
-  This function generate a private, public keypair.\n
+`**function** generate(bits=2048)`
+
+  This function generates a private, public keypair.
   The argument bits is the size of the RSA modulus, 2048 is the default.
   returns private key, public key in that order
+  
 `**class** server(ip='0.0.0.0', port=1699, public=None, private=None, password=None)`
+
   This is the server class
   The ip arguement is the ip on which the server should bind to
   The port is used for binding as well
