@@ -24,7 +24,7 @@ def generate(bits=2048):  # function to generate an rsa keypair
 
 def keyOut(key, password=None):  # A way of outputting a RSA key object in base64 format
     if password:
-        return base64.b64encode(key.exportKey(format='DER', pkcs=8, protection='PBKDF2WithHMAC-SHA1AndDES-EDE3-CBC', 
+        return base64.b64encode(key.exportKey(format='DER', pkcs=8, protection='PBKDF2WithHMAC-SHA1AndDES-EDE3-CBC',
                                               passphrase=password)).decode()
     else:
         return base64.b64encode(key.exportKey(format='DER')).decode()
@@ -75,6 +75,7 @@ class server:  # server class
         }).encode()
         client.sendall(packet)  # send the data to the connected client
         data = self.decrypt(client.recv(2048).decode())  # decrypt received data, i.e the session key
+        client.sendall(Fernet(loads(data)['key']).encrypt('initialized'.encode()))
         return loads(data)['key']  # The client responds with the session key
 
     def accept(self):  # Method to accept a client connection and return a client object
@@ -125,12 +126,17 @@ class client:  # client class
         })
         enc = encrypt(self.serverPub, packet)
         self.s.sendall(enc)
+        try:
+            if not self.decrypt(self.s.recv(2048).decode()) == 'initialized':
+                raise Exception('Unable to start session, may be a server issue')
+        except cryptography.fernet.InvalidToken as e:
+            raise Exception('Session data failed to decrypt, server/client key may be wrong: %s' % e)
 
     def decrypt(self, message):
         try:
             return self.sessionKey.decrypt(message.encode()).decode()
         except cryptography.fernet.InvalidToken as e:  # on decrypt error False will be returned
-            raise Exception('Unable to decrypt data: %s' %e)
+            raise Exception('Unable to decrypt data: %s' % e)
 
     def send(self, message):
         data = self.sessionKey.encrypt(message.encode()).decode() + ':end'
