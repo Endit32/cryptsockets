@@ -61,7 +61,7 @@ class server:  # server class
         self.s.close()
 
     def decrypt(self, message):  # A way to decrypt received data from the client, uses RSA
-        cipher = PKCS1_OAEP.new(self.privateKey) 
+        cipher = PKCS1_OAEP.new(self.privateKey)
         try:
             return cipher.decrypt(base64.b64decode(message)).decode()
         except (ValueError, TypeError):
@@ -86,7 +86,7 @@ class clientObj:  # the client object
 
     def decrypt(self, message):  # this decrypt function uses Fernet for the session key
         try:
-            return self.sessionKey.decrypt(message.encode())
+            return self.sessionKey.decrypt(message.encode()).decode()
         except InvalidToken:  # on decrypt error False will be returned
             return False
 
@@ -120,7 +120,7 @@ class client:  # client class
 
     def decrypt(self, message):
         try:
-            return self.sessionKey.decrypt(message.encode())
+            return self.sessionKey.decrypt(message.encode()).decode()
         except InvalidToken:
             return False
 
