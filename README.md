@@ -65,6 +65,7 @@ Client.send('Tom')
    
    Returns: an RSA key object
 
+   <hr>
    
 #### *Class* `server(ip='0.0.0.0', port=1699, public=None, private=None, password=None)`
 
