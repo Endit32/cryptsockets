@@ -6,6 +6,7 @@ import re
 import socket
 import base64
 from json import dumps, loads
+import cryptography
 from cryptography.fernet import Fernet
 
 """ Functions for keys and encryption """
@@ -13,7 +14,7 @@ from cryptography.fernet import Fernet
 
 def encrypt(public, message):  # function to encrypt data
     cipher = PKCS1_OAEP.new(public)
-    return base64.b64encode(cipher.encrypt(message.encode()))
+    return base64.b64encode(cipher.encrypt(message.encode()))  # returns bytes
 
 
 def generate(bits=2048):  # function to generate an rsa keypair
@@ -23,7 +24,8 @@ def generate(bits=2048):  # function to generate an rsa keypair
 
 def keyOut(key, password=None):  # A way of outputting a RSA key object in base64 format
     if password:
-        return base64.b64encode(key.exportKey(format='DER', pkcs=8, protection='PBKDF2WithHMAC-SHA1AndDES-EDE3-CBC', passphrase=password))
+        return base64.b64encode(key.exportKey(format='DER', pkcs=8, protection='PBKDF2WithHMAC-SHA1AndDES-EDE3-CBC', 
+                                              passphrase=password)).decode()
     else:
         return base64.b64encode(key.exportKey(format='DER')).decode()
 
@@ -64,17 +66,20 @@ class server:  # server class
         cipher = PKCS1_OAEP.new(self.privateKey)
         try:
             return cipher.decrypt(base64.b64decode(message)).decode()
-        except (ValueError, TypeError):
-            return False
+        except (ValueError, TypeError) as e:
+            raise Exception('Unable to decrypt data: %s' % e)
 
-    def accept(self):  # Method to accept a client connection and return a client object
-        client, addr = self.s.accept()
+    def handshake(self, client):
         packet = dumps({  # Makes a packet with the servers public key
             'public': self.publicKey
         }).encode()
         client.sendall(packet)  # send the data to the connected client
         data = self.decrypt(client.recv(2048).decode())  # decrypt received data, i.e the session key
-        sessionKey = loads(data)['key']  # The client responds with the session key
+        return loads(data)['key']  # The client responds with the session key
+
+    def accept(self):  # Method to accept a client connection and return a client object
+        client, addr = self.s.accept()
+        sessionKey = self.handshake(client)
         return clientObj(client, Fernet(sessionKey), self.privateKey)  # client object is returned
 
 
@@ -87,8 +92,8 @@ class clientObj:  # the client object
     def decrypt(self, message):  # this decrypt function uses Fernet for the session key
         try:
             return self.sessionKey.decrypt(message.encode()).decode()
-        except InvalidToken:  # on decrypt error False will be returned
-            return False
+        except cryptography.fernet.InvalidToken as e:  # on decrypt error False will be returned
+            raise Exception('Unable to decrypt data: %s' %e)
 
     def send(self, message):
         data = self.sessionKey.encrypt(message.encode()).decode() + ':end'  # encrypts data using session key
@@ -109,6 +114,9 @@ class client:  # client class
     def __init__(self, ip, port=1699):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.connect((ip, port))
+
+        """ Handshake """
+
         self.serverPub = keyIn(loads(self.s.recv(2048).decode())['public'])
         session_key = Fernet.generate_key()
         self.sessionKey = Fernet(session_key)
@@ -121,8 +129,8 @@ class client:  # client class
     def decrypt(self, message):
         try:
             return self.sessionKey.decrypt(message.encode()).decode()
-        except InvalidToken:
-            return False
+        except cryptography.fernet.InvalidToken as e:  # on decrypt error False will be returned
+            raise Exception('Unable to decrypt data: %s' %e)
 
     def send(self, message):
         data = self.sessionKey.encrypt(message.encode()).decode() + ':end'
