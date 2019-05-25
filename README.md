@@ -43,6 +43,29 @@ Client.send('Tom')
    Returns: (private key, public key) in that order
    <hr>
    
+#### *Function* `KeyIn(key, password=None)`
+
+   This function simply takes an RSA key object and outputs it as base64
+   
+   **parameters:**
+   * key - the key to be used
+   * password - if specified the key will be encrypted with this password
+   
+   Returns: The original key as base64
+   
+   <hr>
+   
+#### *Function* `keyOut(key, password)`
+
+   This function takes in a base64 key and outputs an RSA key object
+   
+   **parameters:**
+   * key - the key to be used
+   * password - used if the key was encrypted using a password
+   
+   Returns: an RSA key object
+
+   
 #### *Class* `server(ip='0.0.0.0', port=1699, public=None, private=None, password=None)`
 
    This is the server class.
