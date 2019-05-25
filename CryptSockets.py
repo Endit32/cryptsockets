@@ -38,7 +38,7 @@ def keyIn(key, password=None):  # takes in a key in base64 and turns it into an 
 
 
 class server:  # server class
-    def __init__(self, port=1699, public=None, private=None, password=None):
+    def __init__(self, ip='0.0.0.0', port=1699, public=None, private=None, password=None):
         if not public and not private:  # If keys aren't defined they will be generated
             self.privateKey = RSA.generate(2048)
             self.publicKey = keyOut(self.privateKey.publickey())
@@ -53,7 +53,7 @@ class server:  # server class
             self.privateKey = keyIn(private)
             self.publicKey = public
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.bind(('0.0.0.0', port))
+        self.s.bind((ip, port))
         self.s.listen(100)
 
     def close(self):
