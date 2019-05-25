@@ -33,16 +33,42 @@ Client.send('Tom')
 
 ## Classes and Functions
 
-`**function** generate(bits=2048)`
+**function** `generate(bits=2048)`
 
   This function generates a private, public keypair.
-  The argument bits is the size of the RSA modulus, 2048 is the default.
-  returns private key, public key in that order
   
-`**class** server(ip='0.0.0.0', port=1699, public=None, private=None, password=None)`
+  **parameters:**   
+  * bits - size of the RSA modulus, 2048 is the default
+  
+  Returns: (private key, public key) in that order
+  
+**class** `server(ip='0.0.0.0', port=1699, public=None, private=None, password=None)`
 
-  This is the server class
-  The ip arguement is the ip on which the server should bind to
-  The port is used for binding as well
-  public and private are the public and private keys repectively, can be left blank for new ones to be generated, can be the location of a file containing the key, or just the key, all must be in base64 format
-  password, this is for if you are importing a private key that has a password
+  This is the server class.
+  
+  **parameters:**
+  * ip - the ip that the server will bind to, default is 0.0.0.0
+  * port - the port that the server will bind to, default is 1699
+  * public - The public key of the server, can be file or key, if left blank a new one will be generated
+  * private - same as public
+  * password - only relevant if you are importing a key and it is password locked
+
+  **methods:**
+  * `accept()` - accepts an incoming connection and returns a client object
+  * `close()` - closes the socket.
+  
+**class** `client(ip, port=1699, public=None, private=None, password=None)`
+
+  This is the server class.
+  
+  **parameters:**
+  * ip - the ip that the client should connect to
+  * port - the port that the server will bind to, default is 1699
+  * public - The public key of the server, can be file or key, if left blank a new one will be generated
+  * private - same as public
+  * password - only relevant if you are importing a key and it is password locked
+
+  **methods:**
+  * `send()` - send encrypted data to the server
+  * `recv(bufsiz=2048)` - used to receive data from the server, iterated until all data is received and decrypted, returns the decrypted message or False if decryption fails
+  * `close()` - used to close the connection to the server
