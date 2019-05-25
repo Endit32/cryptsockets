@@ -6,13 +6,14 @@ import re
 import socket
 import base64
 from json import dumps, loads
+from cryptography.fernet import Fernet
 
 """ Functions for keys and encryption """
 
 
 def encrypt(public, message):  # function to encrypt data
     cipher = PKCS1_OAEP.new(public)
-    return base64.b64encode(cipher.encrypt(message.encode())).decode()
+    return base64.b64encode(cipher.encrypt(message.encode()))
 
 
 def generate(bits=2048):  # function to generate an rsa keypair
@@ -59,33 +60,38 @@ class server:  # server class
     def close(self):
         self.s.close()
 
+    def decrypt(self, message):  # A way to decrypt received data from the client, uses RSA
+        cipher = PKCS1_OAEP.new(self.privateKey) 
+        try:
+            return cipher.decrypt(base64.b64decode(message)).decode()
+        except (ValueError, TypeError):
+            return False
+
     def accept(self):  # Method to accept a client connection and return a client object
         client, addr = self.s.accept()
         packet = dumps({  # Makes a packet with the servers public key
             'public': self.publicKey
         }).encode()
         client.sendall(packet)  # send the data to the connected client
-        clientPub = loads(client.recv(2048).decode())['public']  # The client responds with their key which is loaded
-        # and passed to the client object
-        return clientObj(client, keyIn(clientPub), self.privateKey)
+        data = self.decrypt(client.recv(2048).decode())  # decrypt received data, i.e the session key
+        sessionKey = loads(data)['key']  # The client responds with the session key
+        return clientObj(client, Fernet(sessionKey), self.privateKey)  # client object is returned
 
 
 class clientObj:  # the client object
-    def __init__(self, client, clientPub, clientPriv):
+    def __init__(self, client, session, serverPriv):
         self.client = client
-        self.clientPub = clientPub
-        self.clientPriv = clientPriv
+        self.sessionKey = session  # session key
+        self.serverPriv = serverPriv
 
-    def decrypt(self, message):  # A way to decrypt received data from the client
-        cipher = PKCS1_OAEP.new(self.clientPriv)
+    def decrypt(self, message):  # this decrypt function uses Fernet for the session key
         try:
-            return cipher.decrypt(base64.b64decode(message)).decode()
-        except (ValueError, TypeError):
+            return self.sessionKey.decrypt(message.encode())
+        except InvalidToken:  # on decrypt error False will be returned
             return False
 
-    def send(self, packet):  # Sends encrypted data to the connected client
-        data = encrypt(self.clientPub, packet) + ':end'  # Specifies the end of the packet if length of data is large
-        # than the buffer size
+    def send(self, message):
+        data = self.sessionKey.encrypt(message.encode()).decode() + ':end'  # encrypts data using session key
         self.client.sendall(data.encode())
 
     def close(self):  # closes a client connection
@@ -100,38 +106,26 @@ class clientObj:  # the client object
 
 
 class client:  # client class
-    def __init__(self, ip, port=1699, public=None, private=None, password=None):
-        if not public and not private:
-            self.privateKey = RSA.generate(2048)
-            self.publicKey = keyOut(self.privateKey.publickey())
-        elif os.path.isfile(public) and os.path.isfile(private):
-            with open(public, 'r') as f:
-                privateKey = f.read()
-                self.privateKey = keyIn(privateKey, password)
-            with open(public, 'r') as f:
-                publicKey = f.read()
-                self.publicKey = keyIn(publicKey)
-        else:
-            self.privateKey = keyIn(private)
-            self.publicKey = public
-
+    def __init__(self, ip, port=1699):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.connect((ip, port))
-        packet = dumps({  # exchanging keys with the server
-            'public': self.publicKey
-        }).encode()
-        self.s.sendall(packet)
         self.serverPub = keyIn(loads(self.s.recv(2048).decode())['public'])
+        session_key = Fernet.generate_key()
+        self.sessionKey = Fernet(session_key)
+        packet = dumps({  # exchanging keys with the server
+            'key': session_key.decode()
+        })
+        enc = encrypt(self.serverPub, packet)
+        self.s.sendall(enc)
 
     def decrypt(self, message):
-        cipher = PKCS1_OAEP.new(self.privateKey)
         try:
-            return cipher.decrypt(base64.b64decode(message)).decode()
-        except (ValueError, TypeError):
+            return self.sessionKey.decrypt(message.encode())
+        except InvalidToken:
             return False
 
     def send(self, message):
-        data = encrypt(self.serverPub, message) + ':end'
+        data = self.sessionKey.encrypt(message.encode()).decode() + ':end'
         self.s.sendall(data.encode())
 
     def close(self):
