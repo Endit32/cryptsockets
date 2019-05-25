@@ -33,7 +33,7 @@ Client.send('Tom')
 
 ## Classes and Functions
 
-### **Function** `generate(bits=2048)`
+#### **Function** `generate(bits=2048)`
 
    This function generates a private, public keypair.
   
@@ -41,8 +41,9 @@ Client.send('Tom')
    * bits - size of the RSA modulus, 2048 is the default
   
    Returns: (private key, public key) in that order
+   
   
-### **Class** `server(ip='0.0.0.0', port=1699, public=None, private=None, password=None)`
+#### **Class** `server(ip='0.0.0.0', port=1699, public=None, private=None, password=None)`
 
    This is the server class.
   
@@ -56,8 +57,9 @@ Client.send('Tom')
    **methods:**
    * `accept()` - accepts an incoming connection and returns a client object
    * `close()` - closes the socket.
+   
   
-### **Class** `client(ip, port=1699, public=None, private=None, password=None)`
+#### **Class** `client(ip, port=1699, public=None, private=None, password=None)`
 
    This is the server class.
   
