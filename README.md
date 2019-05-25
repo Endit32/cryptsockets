@@ -33,42 +33,42 @@ Client.send('Tom')
 
 ## Classes and Functions
 
-**function** `generate(bits=2048)`
+**Function** `generate(bits=2048)`
 
-  This function generates a private, public keypair.
+    This function generates a private, public keypair.
   
-  **parameters:**   
-  * bits - size of the RSA modulus, 2048 is the default
+    **parameters:**   
+    * bits - size of the RSA modulus, 2048 is the default
   
-  Returns: (private key, public key) in that order
+    Returns: (private key, public key) in that order
   
-**class** `server(ip='0.0.0.0', port=1699, public=None, private=None, password=None)`
+**Class** `server(ip='0.0.0.0', port=1699, public=None, private=None, password=None)`
 
-  This is the server class.
+    This is the server class.
   
-  **parameters:**
-  * ip - the ip that the server will bind to, default is 0.0.0.0
-  * port - the port that the server will bind to, default is 1699
-  * public - The public key of the server, can be file or key, if left blank a new one will be generated
-  * private - same as public
-  * password - only relevant if you are importing a key and it is password locked
+    **parameters:**
+    * ip - the ip that the server will bind to, default is 0.0.0.0
+    * port - the port that the server will bind to, default is 1699
+    * public - The public key of the server, can be file or key, if left blank a new one will be generated
+    * private - same as public
+    * password - only relevant if you are importing a key and it is password locked
 
-  **methods:**
-  * `accept()` - accepts an incoming connection and returns a client object
-  * `close()` - closes the socket.
+    **methods:**
+    * `accept()` - accepts an incoming connection and returns a client object
+    * `close()` - closes the socket.
   
-**class** `client(ip, port=1699, public=None, private=None, password=None)`
+**Class** `client(ip, port=1699, public=None, private=None, password=None)`
 
-  This is the server class.
+    This is the server class.
   
-  **parameters:**
-  * ip - the ip that the client should connect to
-  * port - the port that the server will bind to, default is 1699
-  * public - The public key of the server, can be file or key, if left blank a new one will be generated
-  * private - same as public
-  * password - only relevant if you are importing a key and it is password locked
+    **parameters:**
+    * ip - the ip that the client should connect to
+    * port - the port that the server will bind to, default is 1699
+    * public - The public key of the server, can be file or key, if left blank a new one will be generated
+    * private - same as public
+    * password - only relevant if you are importing a key and it is password locked
 
-  **methods:**
-  * `send()` - send encrypted data to the server
-  * `recv(bufsiz=2048)` - used to receive data from the server, iterated until all data is received and decrypted, returns the decrypted message or False if decryption fails
-  * `close()` - used to close the connection to the server
+    **methods:**
+    * `send()` - send encrypted data to the server
+    * `recv(bufsiz=2048)` - used to receive data from the server, iterated until all data is received and decrypted, returns the decrypted message or False if decryption fails
+    * `close()` - used to close the connection to the server
