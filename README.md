@@ -97,6 +97,8 @@ Client.send('Tom')
    * `sendfile(path, name)` - used to send a file to a client
    * `recv(bufsiz=2048)` - used to recieve from the client, returns either the data or a file object
    
+   <hr>
+
 #### *object* `fileObj(name, contents)`
 
    This is the object that is returned if a file is received form client/server. 
@@ -108,6 +110,8 @@ Client.send('Tom')
    **methods:**
    * `write(path)` - this is used to write the contents of the file to a file.
    *  `read()` - this just returns the contents of the file
+   
+   <hr>
 
 #### *Class* `client(ip, port=1699, public=None, private=None, password=None)`
 
