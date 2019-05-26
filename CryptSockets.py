@@ -75,7 +75,10 @@ class server:  # server class
         }).encode()
         client.sendall(packet)  # send the data to the connected client
         data = self.decrypt(client.recv(2048).decode())  # decrypt received data, i.e the session key
-        client.sendall(Fernet(loads(data)['key']).encrypt('initialized'.encode()))
+        packet = dumps({
+            'type': 'session'
+        }).encode()
+        client.sendall(Fernet(loads(data)['key']).encrypt(packet))
         return loads(data)['key']  # The client responds with the session key
 
     def accept(self):  # Method to accept a client connection and return a client object
@@ -97,8 +100,26 @@ class clientObj:  # the client object
             raise Exception('Unable to decrypt data: %s' %e)
 
     def send(self, message):
-        data = self.sessionKey.encrypt(message.encode()).decode() + ':end'  # encrypts data using session key
+        packet = dumps({
+            'type': 'message',
+            'data': message
+        }).encode()
+        data = self.sessionKey.encrypt(packet).decode() + ':end'
         self.client.sendall(data.encode())
+
+    def sendfile(self, path, name):
+        with open(path, 'rb') as f:
+            contents = f.read()
+        packet = dumps({
+            'type': 'file',
+            'name': name,
+            'contents': base64.b64encode(contents).decode()
+        }).encode()
+        try:
+            data = self.sessionKey.encrypt(packet).decode() + ':end'
+            self.client.sendall(data.encode())
+        except BufferOverflow:
+            raise Exception('File was too large')
 
     def close(self):  # closes a client connection
         self.client.close()
@@ -108,7 +129,24 @@ class clientObj:  # the client object
         while True:
             data += self.client.recv(bufsiz).decode()
             if data.endswith(':end'):
-                return self.decrypt(data[:-4])
+                data = loads(self.decrypt(data[:-4]))
+                if data['type'] == 'message':
+                    return data['data']
+                elif data['type'] == 'file':
+                    return fileObj(data['name'], data['contents'])
+
+
+class fileObj:
+    def __init__(self, name, contents):
+        self.name = name
+        self.contents = contents
+
+    def write(self, path):
+        with open(path, 'wb') as f:
+            f.write(self.contents)
+
+    def read(self):
+        return self.contents
 
 
 class client:  # client class
@@ -127,7 +165,7 @@ class client:  # client class
         enc = encrypt(self.serverPub, packet)
         self.s.sendall(enc)
         try:
-            if not self.decrypt(self.s.recv(2048).decode()) == 'initialized':
+            if loads(self.decrypt(self.s.recv(2048).decode()))['type'] != 'session':
                 raise Exception('Unable to start session, may be a server issue')
         except cryptography.fernet.InvalidToken as e:
             raise Exception('Session data failed to decrypt, server/client key may be wrong: %s' % e)
@@ -139,19 +177,37 @@ class client:  # client class
             raise Exception('Unable to decrypt data: %s' % e)
 
     def send(self, message):
-        data = self.sessionKey.encrypt(message.encode()).decode() + ':end'
+        packet = dumps({
+            'type': 'message',
+            'data': message
+        }).encode()
+        data = self.sessionKey.encrypt(packet).decode() + ':end'
         self.s.sendall(data.encode())
 
-    def sendfile(self, path):
+    def sendfile(self, path, name):
         with open(path, 'rb') as f:
             contents = f.read()
+        packet = dumps({
+            'type': 'file',
+            'name': name,
+            'contents': base64.b64encode(contents).decode()
+        }).encode()
+        try:
+            data = self.sessionKey.encrypt(packet).decode() + ':end'
+            self.s.sendall(data.encode())
+        except BufferOverflow:
+            raise Exception('File was too large')
 
     def close(self):
         self.s.close()
 
-    def recv(self, bufsiz=2048):
+    def recv(self, bufsiz=2048):  # receives ALL data even if it's longer than the buffer size
         data = ''
         while True:
             data += self.s.recv(bufsiz).decode()
             if data.endswith(':end'):
-                return self.decrypt(data[:-4])
+                data = loads(self.decrypt(data[:-4]))
+                if data['type'] == 'message':
+                    return data['data']
+                elif data['type'] == 'file':
+                    return fileObj(data['name'], base64.b64decode(data['contents']))
