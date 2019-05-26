@@ -142,6 +142,10 @@ class client:  # client class
         data = self.sessionKey.encrypt(message.encode()).decode() + ':end'
         self.s.sendall(data.encode())
 
+    def sendfile(self, path):
+        with open(path, 'rb') as f:
+            contents = f.read()
+
     def close(self):
         self.s.close()
 
