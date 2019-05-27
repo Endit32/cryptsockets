@@ -6,6 +6,7 @@ import re
 import socket
 import base64
 from json import dumps, loads
+import binascii
 import cryptography
 from cryptography.fernet import Fernet
 
@@ -109,11 +110,11 @@ class clientObj:  # the client object
 
     def sendfile(self, path, name):
         with open(path, 'rb') as f:
-            contents = f.read()
+            contents = binascii.hexlify(f.read()).decode()
         packet = dumps({
             'type': 'file',
             'name': name,
-            'contents': base64.b64encode(contents).decode()
+            'contents': contents
         }).encode()
         try:
             data = self.sessionKey.encrypt(packet).decode() + ':end'
@@ -139,7 +140,7 @@ class clientObj:  # the client object
 class fileObj:
     def __init__(self, name, contents):
         self.name = name
-        self.contents = contents
+        self.contents = binascii.unhexlify(contents)
 
     def write(self, path):
         with open(path, 'wb') as f:
@@ -186,11 +187,11 @@ class client:  # client class
 
     def sendfile(self, path, name):
         with open(path, 'rb') as f:
-            contents = f.read()
+            contents = binascii.hexlify(f.read()).decode()
         packet = dumps({
             'type': 'file',
             'name': name,
-            'contents': base64.b64encode(contents).decode()
+            'contents': contents
         }).encode()
         try:
             data = self.sessionKey.encrypt(packet).decode() + ':end'
