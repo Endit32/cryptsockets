@@ -82,36 +82,6 @@ Client.send('Tom')
    * `accept()` - accepts an incoming connection and returns a client object
    * `close()` - closes the socket.
    <hr>
-   
-#### *object* `clientObj(client, session, serverPriv)`
-
-   This is the object that is returned when calling accept on the server.
-   
-   **parameters:**
-   * client - this is the socket object used to send and receive to a client
-   * session - this is the session key
-   * serverPriv - this is the servers private key
-   
-   **methods:**
-   * `send(message)` - send an encrypted message to the connected client
-   * `sendfile(path, name)` - used to send a file to a client
-   * `recv(bufsiz=2048)` - used to recieve from the client, returns either the data or a file object
-   
-   <hr>
-
-#### *object* `fileObj(name, contents)`
-
-   This is the object that is returned if a file is received form client/server. 
-   
-   **parameters:**
-   * name - the name of the file
-   * contents - the contents of the file
-   
-   **methods:**
-   * `write(path)` - this is used to write the contents of the file to a file.
-   *  `read()` - this just returns the contents of the file
-   
-   <hr>
 
 #### *Class* `client(ip, port=1699, public=None, private=None, password=None)`
 
@@ -126,6 +96,37 @@ Client.send('Tom')
 
    **methods:**
    * `send()` - send encrypted data to the server
-   * `sendfile(path, name)` - used to send a file.
+   * `sendfile(path,)` - used to send a file.
    * `recv(bufsiz=2048)` - used to receive data/file from the server, iterated until all data is received and decrypted. If data is a file a file object will be returned.
    * `close()` - used to close the connection to the server
+   
+   <hr>
+   
+#### *object* `clientObj(client, session, serverPriv)`
+
+   This is the object that is returned when calling accept on the server.
+   
+   **parameters:**
+   * client - this is the socket object used to send and receive to a client
+   * session - this is the session key
+   * serverPriv - this is the servers private key
+   
+   **methods:**
+   * `send(message)` - send an encrypted message to the connected client
+   * `sendfile(path)` - used to send a file to a client, when sending a larger file increase the buffer for `recv()` on the client side.
+   * `recv(bufsiz=2048)` - used to recieve from the client, returns either the data or a file object
+   
+   <hr>
+
+#### *object* `fileObj(extension, contents)`
+
+   This is the object that is returned if a file is received form client/server. 
+   
+   **parameters:**
+   * extension - the extension of the file
+   * contents - the contents of the file
+   
+   **methods:**
+   * `make(path)` - this is used to write the contents of the file to a file.
+   * `read()` - this just returns the contents of the file
+   
