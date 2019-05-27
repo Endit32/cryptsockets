@@ -108,12 +108,17 @@ class clientObj:  # the client object
         data = self.sessionKey.encrypt(packet).decode() + ':end'
         self.client.sendall(data.encode())
 
-    def sendfile(self, path, name):
+    def sendfile(self, path):
+        ex = re.search(r'\.(?!.*\.)', path)
+        if ex:
+            extension = path[ex.start():]
+        else:
+            extension = ''
         with open(path, 'rb') as f:
             contents = binascii.hexlify(f.read()).decode()
         packet = dumps({
             'type': 'file',
-            'name': name,
+            'extension': extension,
             'contents': contents
         }).encode()
         try:
@@ -134,16 +139,16 @@ class clientObj:  # the client object
                 if data['type'] == 'message':
                     return data['data']
                 elif data['type'] == 'file':
-                    return fileObj(data['name'], data['contents'])
+                    return fileObj(data['extension'], data['contents'])
 
 
 class fileObj:
-    def __init__(self, name, contents):
-        self.name = name
+    def __init__(self, extension, contents):
+        self.ex = extension
         self.contents = binascii.unhexlify(contents)
 
-    def write(self, path):
-        with open(path, 'wb') as f:
+    def make(self, path):
+        with open(path + self.ex, 'wb') as f:
             f.write(self.contents)
 
     def read(self):
@@ -185,12 +190,17 @@ class client:  # client class
         data = self.sessionKey.encrypt(packet).decode() + ':end'
         self.s.sendall(data.encode())
 
-    def sendfile(self, path, name):
+    def sendfile(self, path):
+        ex = re.search(r'\.(?!.*\.)', path)
+        if ex:
+            extension = path[ex.start():]
+        else:
+            extension = ''
         with open(path, 'rb') as f:
             contents = binascii.hexlify(f.read()).decode()
         packet = dumps({
             'type': 'file',
-            'name': name,
+            'extension': extension,
             'contents': contents
         }).encode()
         try:
@@ -211,4 +221,4 @@ class client:  # client class
                 if data['type'] == 'message':
                     return data['data']
                 elif data['type'] == 'file':
-                    return fileObj(data['name'], base64.b64decode(data['contents']))
+                    return fileObj(data['extension'], data['contents'])
